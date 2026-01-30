@@ -1,0 +1,27 @@
+{
+  "name": "node",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anggeching/node.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/anggeching/node/issues"
+  },
+  "homepage": "https://github.com/anggeching/node#readme",
+  "dependencies": {
+    "express": "^5.2.1",
+    "googleapis": "^121.0.0",
+    "dotenv": "^16.0.0"
+  }
+}
