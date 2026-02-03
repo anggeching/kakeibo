@@ -1,4 +1,18 @@
 import React, { useMemo, useState } from "react";
+import styles from "./pages/KakeiboPage.module.css"; // CSS Modules: styles.xxx are CLASS NAMES (strings)
+
+/**
+ * KakeiboPage (Page Component)
+ * Purpose:
+ * - Main screen that contains Step 1 (Income) + Step 2 (Funds) in one page.
+ * - Holds shared state and calculations that Step 1 and Step 2 depend on.
+ *
+ * Future separation plan:
+ * - Extract SourceCard (Step 1 card UI) into /components/SourceCard.jsx
+ * - Extract FundRow (Step 2 per-fund row) into /components/FundRow.jsx
+ * - Extract SummaryPanel (totals + remaining + DONE button) into /components/SummaryPanel.jsx
+ * - Extract Toast into /components/Toast.jsx
+ */
 
 const peso = (n) =>
   new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP" }).format(
@@ -11,14 +25,38 @@ const clampNumber = (v) => {
 };
 
 export default function KakeiboPage() {
+  /**
+   * STEP 1 STATE — Income sources/cards
+   * Purpose:
+   * - Dynamic list of sources (BPI, GCash, etc.)
+   * - Each source has: received? + amount
+   *
+   * Future extraction:
+   * - Each item UI becomes a <SourceCard /> component
+   */
   const [sources, setSources] = useState([
     { id: "bpi", name: "BPI", received: false, amount: "" },
     { id: "gcash", name: "GCash", received: false, amount: "" },
   ]);
 
+  /**
+   * STEP 2 STATE — Fund allocations
+   * Purpose:
+   * - Stores user input for EF/SF/Spending/Fun allocations
+   * - "mode" controls whether the inputs represent Amount or Percent
+   *
+   * Future extraction:
+   * - Each fund row becomes <FundRow />
+   * - The totals + DONE area becomes <SummaryPanel />
+   */
   const [mode, setMode] = useState("amount"); // "amount" | "percent"
   const [funds, setFunds] = useState({ ef: "", sf: "", spending: "", fun: "" });
 
+  /**
+   * UI-only labels (optional)
+   * Purpose:
+   * - Shows which “bank” bucket each fund belongs to in the UI
+   */
   const fundBanks = {
     ef: "EF-bank",
     sf: "SF-bank / GSave",
@@ -26,9 +64,32 @@ export default function KakeiboPage() {
     fun: "spend-bank",
   };
 
-  const [toast, setToast] = useState(null);
+  /**
+   * Toast message state (frontend only)
+   * Purpose:
+   * - Temporary feedback for user actions: save/done/errors
+   *
+   * Future extraction:
+   * - Become a <Toast /> component
+   */
+  const [toast, setToast] = useState(null); // { type: "success" | "error", message: string }
+
+  /**
+   * DONE summary (frontend only)
+   * Purpose:
+   * - When DONE is pressed, store final computed amounts for display
+   */
   const [doneSummary, setDoneSummary] = useState(null);
 
+  // --------------------------
+  // DERIVED VALUES / COMPUTATIONS
+  // --------------------------
+
+  /**
+   * Total Income (from Step 1)
+   * Purpose:
+   * - Step 2 depends on this value
+   */
   const totalIncome = useMemo(() => {
     return sources.reduce((sum, s) => {
       if (!s.received) return sum;
@@ -39,6 +100,11 @@ export default function KakeiboPage() {
 
   const step1Valid = totalIncome > 0;
 
+  /**
+   * Convert Step 2 inputs to actual peso amounts
+   * - If mode=amount: use direct values
+   * - If mode=percent: compute percent of totalIncome
+   */
   const fundsAsAmount = useMemo(() => {
     if (mode === "amount") {
       return {
@@ -48,6 +114,7 @@ export default function KakeiboPage() {
         fun: clampNumber(funds.fun),
       };
     }
+
     const toAmt = (p) => (totalIncome * clampNumber(p)) / 100;
     return {
       ef: toAmt(funds.ef),
@@ -70,6 +137,10 @@ export default function KakeiboPage() {
     totalIncome,
     allocatedTotal,
   ]);
+
+  // --------------------------
+  // VALIDATION
+  // --------------------------
 
   const step1Errors = useMemo(() => {
     const errs = [];
@@ -108,6 +179,10 @@ export default function KakeiboPage() {
   }, [step1Valid, mode, funds, allocatedTotal, totalIncome]);
 
   const canDone = step2Errors.length === 0;
+
+  // --------------------------
+  // HANDLERS (User actions)
+  // --------------------------
 
   const showToast = (type, message) => {
     setToast({ type, message });
@@ -161,75 +236,83 @@ export default function KakeiboPage() {
     showToast("success", "Reset complete");
   };
 
+  // --------------------------
+  // RENDER
+  // --------------------------
+
   return (
-    <div style={styles.page}>
-      <div style={styles.header}>
+    <div className={styles.page}>
+      {/* HEADER (future: could become <Header /> component) */}
+      <div className={styles.header}>
         <div>
-          <h1 style={styles.title}>Kakeibo</h1>
-          <div style={styles.subtitle}>Single-page: Step 1 + Step 2 (Frontend-only)</div>
+          <h1 className={styles.title}>Kakeibo</h1>
+          <div className={styles.subtitle}>
+            Single-page: Step 1 + Step 2 (Frontend-only)
+          </div>
         </div>
 
-        <div style={styles.headerRight}>
-          <div style={styles.summaryChip}>
-            <div style={styles.chipLabel}>Total Income</div>
-            <div style={styles.chipValue}>{peso(totalIncome)}</div>
+        <div className={styles.headerRight}>
+          <div className={styles.summaryChip}>
+            <div className={styles.chipLabel}>Total Income</div>
+            <div className={styles.chipValue}>{peso(totalIncome)}</div>
           </div>
-          <button style={styles.ghostBtn} onClick={resetAll}>
+          <button className={styles.ghostBtn} onClick={resetAll}>
             Reset
           </button>
         </div>
       </div>
 
-      <section style={styles.section}>
-        <div style={styles.sectionHead}>
-          <h2 style={styles.sectionTitle}>Step 1: Money Allocation (Income)</h2>
+      {/* STEP 1 SECTION */}
+      <section className={styles.section}>
+        <div className={styles.sectionHead}>
+          <h2 className={styles.sectionTitle}>Step 1: Money Allocation (Income)</h2>
 
-          <div style={{ display: "flex", gap: 8 }}>
-            <button style={styles.ghostBtn} onClick={addSource}>
+          <div className={styles.row}>
+            <button className={styles.ghostBtn} onClick={addSource}>
               + Add source
             </button>
 
             <button
-              style={{
-                ...styles.primaryBtn,
-                opacity: step1Errors.length === 0 ? 1 : 0.5,
-                cursor: step1Errors.length === 0 ? "pointer" : "not-allowed",
-              }}
+              className={styles.primaryBtn}
               onClick={saveStep1Local}
               disabled={step1Errors.length !== 0}
+              aria-disabled={step1Errors.length !== 0}
             >
               Save Step 1
             </button>
           </div>
         </div>
 
-        <div style={styles.grid}>
+        <div className={styles.grid}>
           {sources.map((s) => (
-            <div key={s.id} style={styles.card}>
-              <div style={styles.cardTop}>
+            <div key={s.id} className={styles.card}>
+              <div className={styles.cardTop}>
                 <div>
-                  <div style={styles.cardTitle}>{s.name}</div>
-                  <div style={styles.cardHint}>
+                  <div className={styles.cardTitle}>{s.name}</div>
+                  <div className={styles.cardHint}>
                     Prompt: Is {s.name} received [budget] amount?
                   </div>
                 </div>
 
-                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <label style={styles.toggleWrap}>
+                <div className={styles.row}>
+                  <label className={styles.toggleWrap}>
                     <input
                       type="checkbox"
                       checked={s.received}
                       onChange={(e) => {
                         const checked = e.target.checked;
-                        updateSource(s.id, { received: checked, amount: checked ? s.amount : "" });
+                        updateSource(s.id, {
+                          received: checked,
+                          amount: checked ? s.amount : "",
+                        });
                       }}
                     />
-                    <span style={{ marginLeft: 8 }}>{s.received ? "Yes" : "No"}</span>
+                    <span className={styles.toggleText}>{s.received ? "Yes" : "No"}</span>
                   </label>
 
                   <button
                     title="Remove source"
-                    style={styles.iconBtn}
+                    className={styles.iconBtn}
                     onClick={() => removeSource(s.id)}
                   >
                     ✕
@@ -237,13 +320,10 @@ export default function KakeiboPage() {
                 </div>
               </div>
 
-              <div style={styles.fieldRow}>
-                <label style={styles.label}>Amount received (₱)</label>
+              <div className={styles.fieldRow}>
+                <label className={styles.label}>Amount received (₱)</label>
                 <input
-                  style={{
-                    ...styles.input,
-                    backgroundColor: s.received ? "white" : "#f3f4f6",
-                  }}
+                  className={styles.input}
                   type="number"
                   min="0"
                   step="0.01"
@@ -255,13 +335,13 @@ export default function KakeiboPage() {
               </div>
 
               {s.received && clampNumber(s.amount) <= 0 && (
-                <div style={styles.errorText}>Amount must be greater than 0.</div>
+                <div className={styles.errorText}>Amount must be greater than 0.</div>
               )}
             </div>
           ))}
         </div>
 
-        <div style={styles.inlineSummary}>
+        <div className={styles.inlineSummary}>
           <div>
             <strong>Sources received:</strong> {sources.filter((s) => s.received).length}
           </div>
@@ -271,9 +351,9 @@ export default function KakeiboPage() {
         </div>
 
         {step1Errors.length > 0 && (
-          <div style={styles.errorBox}>
-            <div style={styles.errorTitle}>Step 1 needs attention:</div>
-            <ul style={{ margin: "8px 0 0 18px" }}>
+          <div className={styles.errorBox}>
+            <div className={styles.errorTitle}>Step 1 needs attention:</div>
+            <ul className={styles.errorList}>
               {step1Errors.map((e, i) => (
                 <li key={i}>{e}</li>
               ))}
@@ -282,20 +362,21 @@ export default function KakeiboPage() {
         )}
       </section>
 
-      <section style={styles.section}>
-        <div style={styles.sectionHead}>
-          <h2 style={styles.sectionTitle}>Step 2: EF & SF Allocation</h2>
+      {/* STEP 2 SECTION */}
+      <section className={styles.section}>
+        <div className={styles.sectionHead}>
+          <h2 className={styles.sectionTitle}>Step 2: EF & SF Allocation</h2>
 
-          <div style={styles.modeSwitch}>
+          <div className={styles.modeSwitch}>
             <button
               onClick={() => setMode("amount")}
-              style={{ ...styles.modeBtn, ...(mode === "amount" ? styles.modeBtnActive : null) }}
+              className={`${styles.modeBtn} ${mode === "amount" ? styles.modeBtnActive : ""}`}
             >
               Amount (₱)
             </button>
             <button
               onClick={() => setMode("percent")}
-              style={{ ...styles.modeBtn, ...(mode === "percent" ? styles.modeBtnActive : null) }}
+              className={`${styles.modeBtn} ${mode === "percent" ? styles.modeBtnActive : ""}`}
             >
               Percent (%)
             </button>
@@ -303,18 +384,14 @@ export default function KakeiboPage() {
         </div>
 
         {!step1Valid && (
-          <div style={styles.lockBox}>
+          <div className={styles.lockBox}>
             Step 2 is locked. Complete Step 1 first (at least 1 received source with amount &gt; 0).
           </div>
         )}
 
-        <div
-          style={{
-            opacity: step1Valid ? 1 : 0.5,
-            pointerEvents: step1Valid ? "auto" : "none",
-          }}
-        >
-          <div style={styles.fundGrid}>
+        <div className={!step1Valid ? styles.disabledSection : ""}>
+          {/* Future extraction: each block becomes <FundRow /> */}
+          <div className={styles.fundGrid}>
             <FundRow
               label="Emergency Fund"
               sublabel={fundBanks.ef}
@@ -349,26 +426,25 @@ export default function KakeiboPage() {
             />
           </div>
 
-          <div style={styles.summaryPanel}>
-            <div style={styles.summaryRow}>
+          {/* Future extraction: SummaryPanel */}
+          <div className={styles.summaryPanel}>
+            <div className={styles.summaryRow}>
               <span>Total Income</span>
               <strong>{peso(totalIncome)}</strong>
             </div>
-            <div style={styles.summaryRow}>
+            <div className={styles.summaryRow}>
               <span>Total Allocated</span>
               <strong>{peso(allocatedTotal)}</strong>
             </div>
-            <div style={styles.summaryRow}>
+            <div className={styles.summaryRow}>
               <span>Remaining</span>
-              <strong style={{ color: remaining < 0 ? "#b91c1c" : "inherit" }}>
-                {peso(remaining)}
-              </strong>
+              <strong className={remaining < 0 ? styles.negative : ""}>{peso(remaining)}</strong>
             </div>
 
             {step2Errors.length > 0 && (
-              <div style={styles.errorBox}>
-                <div style={styles.errorTitle}>Step 2 needs attention:</div>
-                <ul style={{ margin: "8px 0 0 18px" }}>
+              <div className={styles.errorBox}>
+                <div className={styles.errorTitle}>Step 2 needs attention:</div>
+                <ul className={styles.errorList}>
                   {step2Errors.map((e, i) => (
                     <li key={i}>{e}</li>
                   ))}
@@ -376,26 +452,16 @@ export default function KakeiboPage() {
               </div>
             )}
 
-            <button
-              style={{
-                ...styles.primaryBtn,
-                width: "100%",
-                marginTop: 12,
-                opacity: canDone ? 1 : 0.5,
-                cursor: canDone ? "pointer" : "not-allowed",
-              }}
-              onClick={doneStep2Local}
-              disabled={!canDone}
-            >
+            <button className={styles.primaryBtn} onClick={doneStep2Local} disabled={!canDone}>
               DONE
             </button>
           </div>
         </div>
 
         {doneSummary && (
-          <div style={styles.successBox}>
-            <div style={styles.successTitle}>Yeyyy! You have now 🎉</div>
-            <div style={styles.successGrid}>
+          <div className={styles.successBox}>
+            <div className={styles.successTitle}>Yeyyy! You have now 🎉</div>
+            <div className={styles.successGrid}>
               <SummaryItem label="Emergency Fund" value={peso(doneSummary.ef)} />
               <SummaryItem label="Sinking Fund" value={peso(doneSummary.sf)} />
               <SummaryItem label="Spending Fund" value={peso(doneSummary.spending)} />
@@ -405,48 +471,47 @@ export default function KakeiboPage() {
         )}
       </section>
 
+      {/* Future extraction: <Toast /> */}
       {toast && (
         <div
-          style={{
-            ...styles.toast,
-            borderColor: toast.type === "error" ? "#ef4444" : "#22c55e",
-          }}
+          className={`${styles.toast} ${toast.type === "error" ? styles.toastError : styles.toastSuccess}`}
         >
           {toast.message}
         </div>
       )}
 
-      <div style={styles.footer}>
+      <div className={styles.footer}>
         Frontend-only version: no API, no Google Sheets yet. Next step is wiring Save/DONE to Express.
       </div>
     </div>
   );
 }
 
-
-
-
-
-
-
-
-
+/**
+ * FundRow (subcomponent)
+ * Purpose:
+ * - UI for ONE fund input row in Step 2
+ * - Shows input + computed amount
+ *
+ * Future separation:
+ * - Move to /components/FundRow.jsx + /components/FundRow.module.css
+ */
 function FundRow({ label, sublabel, mode, value, onChange, computedAmount }) {
   return (
-    <div style={styles.card}>
-      <div style={styles.cardTop}>
+    <div className={styles.card}>
+      <div className={styles.cardTop}>
         <div>
-          <div style={styles.cardTitle}>{label}</div>
-          <div style={styles.cardHint}>{sublabel}</div>
+          <div className={styles.cardTitle}>{label}</div>
+          <div className={styles.cardHint}>{sublabel}</div>
         </div>
       </div>
 
-      <div style={styles.fieldRow}>
-        <label style={styles.label}>
+      <div className={styles.fieldRow}>
+        <label className={styles.label}>
           {mode === "amount" ? "Amount (₱)" : "Percent (%)"}
         </label>
         <input
-          style={styles.input}
+          className={styles.input}
           type="number"
           min="0"
           step="0.01"
@@ -456,222 +521,26 @@ function FundRow({ label, sublabel, mode, value, onChange, computedAmount }) {
         />
       </div>
 
-      <div style={styles.miniComputed}>
+      <div className={styles.miniComputed}>
         Computed: <strong>{peso(computedAmount)}</strong>
       </div>
     </div>
   );
 }
 
+/**
+ * SummaryItem (subcomponent)
+ * Purpose:
+ * - Small display block used in the success summary (DONE message)
+ *
+ * Future separation:
+ * - Can stay here or move into /components if reused elsewhere
+ */
 function SummaryItem({ label, value }) {
   return (
-    <div style={styles.summaryItem}>
-      <div style={styles.summaryItemLabel}>{label}</div>
-      <div style={styles.summaryItemValue}>{value}</div>
+    <div className={styles.summaryItem}>
+      <div className={styles.summaryItemLabel}>{label}</div>
+      <div className={styles.summaryItemValue}>{value}</div>
     </div>
   );
 }
-
-const styles = {
-  page: {
-    maxWidth: 980,
-    margin: "24px auto",
-    padding: "0 16px 40px",
-    fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial",
-    color: "#111827",
-  },
-  header: {
-    display: "flex",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    gap: 16,
-    marginBottom: 16,
-  },
-  title: { margin: 0, fontSize: 32, lineHeight: 1.1 },
-  subtitle: { marginTop: 6, color: "#6b7280" },
-  headerRight: { display: "flex", alignItems: "center", gap: 10 },
-  summaryChip: {
-    border: "1px solid #e5e7eb",
-    borderRadius: 14,
-    padding: "10px 12px",
-    minWidth: 170,
-    background: "#fff",
-  },
-  chipLabel: { fontSize: 12, color: "#6b7280" },
-  chipValue: { fontSize: 16, fontWeight: 700, marginTop: 2 },
-  ghostBtn: {
-    border: "1px solid #e5e7eb",
-    background: "white",
-    borderRadius: 12,
-    padding: "10px 12px",
-    cursor: "pointer",
-  },
-  iconBtn: {
-    border: "1px solid #e5e7eb",
-    background: "white",
-    borderRadius: 10,
-    padding: "6px 9px",
-    cursor: "pointer",
-    fontWeight: 800,
-  },
-  section: {
-    background: "white",
-    border: "1px solid #e5e7eb",
-    borderRadius: 18,
-    padding: 16,
-    marginTop: 14,
-  },
-  sectionHead: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: 12,
-    marginBottom: 12,
-  },
-  sectionTitle: { margin: 0, fontSize: 18 },
-  primaryBtn: {
-    background: "#111827",
-    color: "white",
-    border: "none",
-    borderRadius: 12,
-    padding: "10px 14px",
-    fontWeight: 700,
-    cursor: "pointer",
-  },
-  grid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-    gap: 12,
-  },
-  fundGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-    gap: 12,
-    alignItems: "start",
-  },
-  card: {
-    border: "1px solid #e5e7eb",
-    borderRadius: 16,
-    padding: 14,
-    background: "#fff",
-  },
-  cardTop: {
-    display: "flex",
-    justifyContent: "space-between",
-    gap: 10,
-    alignItems: "center",
-    marginBottom: 10,
-  },
-  cardTitle: { fontWeight: 800, fontSize: 15 },
-  cardHint: { fontSize: 12, color: "#6b7280", marginTop: 2 },
-  toggleWrap: {
-    display: "flex",
-    alignItems: "center",
-    fontSize: 13,
-    userSelect: "none",
-  },
-  fieldRow: { display: "flex", flexDirection: "column", gap: 6 },
-  label: { fontSize: 12, color: "#374151" },
-  input: {
-  border: "1px solid #d1d5db",
-  borderRadius: 12,
-  padding: "10px 12px",
-  fontSize: 14,
-  outline: "none",
-  color: "#111827",          // ✅ text color (dark)
-  backgroundColor: "white",  // ✅ ensure contrast
-},
-
-  errorText: { marginTop: 8, color: "#b91c1c", fontSize: 12 },
-  inlineSummary: {
-    display: "flex",
-    justifyContent: "space-between",
-    gap: 10,
-    marginTop: 12,
-    paddingTop: 12,
-    borderTop: "1px solid #f3f4f6",
-    color: "#374151",
-  },
-  summaryPanel: {
-    marginTop: 12,
-    borderTop: "1px solid #f3f4f6",
-    paddingTop: 12,
-  },
-  summaryRow: {
-    display: "flex",
-    justifyContent: "space-between",
-    padding: "6px 0",
-  },
-  errorBox: {
-    marginTop: 12,
-    border: "1px solid #fecaca",
-    background: "#fff1f2",
-    borderRadius: 14,
-    padding: 12,
-    color: "#7f1d1d",
-  },
-  errorTitle: { fontWeight: 800 },
-  lockBox: {
-    marginBottom: 12,
-    border: "1px solid #e5e7eb",
-    background: "#f9fafb",
-    borderRadius: 14,
-    padding: 12,
-    color: "#374151",
-  },
-  successBox: {
-    marginTop: 14,
-    border: "1px solid #bbf7d0",
-    background: "#f0fdf4",
-    borderRadius: 18,
-    padding: 16,
-  },
-  successTitle: { fontWeight: 900, fontSize: 16, marginBottom: 10 },
-  successGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-    gap: 10,
-  },
-  summaryItem: {
-    border: "1px solid #dcfce7",
-    background: "white",
-    borderRadius: 14,
-    padding: 12,
-  },
-  summaryItemLabel: { fontSize: 12, color: "#166534" },
-  summaryItemValue: { fontSize: 16, fontWeight: 900, marginTop: 4 },
-  modeSwitch: { display: "flex", gap: 8 },
-  modeBtn: {
-    border: "1px solid #e5e7eb",
-    background: "white",
-    borderRadius: 12,
-    padding: "8px 10px",
-    cursor: "pointer",
-    fontWeight: 700,
-    color: "#111827",
-  },
-  modeBtnActive: {
-    background: "#111827",
-    color: "white",
-    borderColor: "#111827",
-  },
-  miniComputed: { marginTop: 10, fontSize: 12, color: "#6b7280" },
-  toast: {
-    position: "fixed",
-    bottom: 18,
-    right: 18,
-    background: "white",
-    border: "2px solid #22c55e",
-    borderRadius: 14,
-    padding: "12px 14px",
-    boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-    maxWidth: 360,
-    zIndex: 9999,
-    fontWeight: 700,
-  },
-  footer: {
-    marginTop: 14,
-    color: "#6b7280",
-    fontSize: 12,
-  },
-};

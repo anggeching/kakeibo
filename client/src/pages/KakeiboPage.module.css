@@ -3,6 +3,7 @@
    - Styles for the Kakeibo page and its subcomponents (while still in one file).
    - Uses CSS Modules: class names are scoped to this file only.
    - Later: move subcomponent styles into their own *.module.css files.
+   - TODO: consider using CSS variables for colors and styles reused across multiple classes.
 */
 
 .page {
@@ -183,7 +184,7 @@
 
 .ghostBtn {
   border: 1px solid #e5e7eb;
-  background: white;
+  background: black;
   border-radius: 12px;
   padding: 10px 12px;
   cursor: pointer;
@@ -191,7 +192,7 @@
 
 .iconBtn {
   border: 1px solid #e5e7eb;
-  background: white;
+  background: black;
   border-radius: 10px;
   padding: 6px 9px;
   cursor: pointer;
