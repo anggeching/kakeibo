@@ -283,7 +283,6 @@ export default function KakeiboPage() {
           </div>
         </div>
 
-        capture and refactor this to SourceCard later
         <div className={styles.grid}>
           {sources.map((s) => (
             <div key={s.id} className={styles.card}>
