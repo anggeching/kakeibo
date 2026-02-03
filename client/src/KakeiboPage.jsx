@@ -423,6 +423,14 @@ export default function KakeiboPage() {
   );
 }
 
+
+
+
+
+
+
+
+
 function FundRow({ label, sublabel, mode, value, onChange, computedAmount }) {
   return (
     <div style={styles.card}>
@@ -565,7 +573,7 @@ const styles = {
   fieldRow: { display: "flex", flexDirection: "column", gap: 6 },
   label: { fontSize: 12, color: "#374151" },
   input: {
-    border: "1px solid #d1d5db",
+    border: "1px solid #374151",
     borderRadius: 12,
     padding: "10px 12px",
     fontSize: 14,

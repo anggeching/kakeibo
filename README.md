@@ -1,8 +1,29 @@
 # Google Sheets OAuth App (Node.js)
 
-This project demonstrates how to use **Google OAuth 2.0** with **Node.js** to authenticate a user and **create Google Spreadsheets programmatically** using the Google Sheets API.
+This project demonstrates how to use **Google OAuth 2.0** with **Node.js** and **react** to authenticate a user and **create Google Spreadsheets programmatically** using the Google Sheets API.
 
 ---
+
+## File Structure
+
+client/src/
+  pages/                                   # Page-level components (screens)
+    KakeiboPage.jsx                        # Main Kakeibo screen; manages Step 1 & Step 2 state, calculations, and user flow
+    KakeiboPage.module.css                 # Layout and styling for the Kakeibo page (containers, sections, spacing)
+
+  components/                              # Reusable UI components
+    SourceCard.jsx                         # Displays one income source (e.g. BPI, GCash) with received toggle and amount input
+    SourceCard.module.css                  # Styles specific to the SourceCard component
+
+    FundRow.jsx                            # Displays one fund allocation row (EF, SF, Spending, Fun)
+    FundRow.module.css                     # Styles for a single fund row and its inputs
+
+    SummaryPanel.jsx                       # Shows allocation summary, totals, remaining balance, and DONE action
+    SummaryPanel.module.css                # Styles for the summary and validation feedback
+
+    Toast.jsx                              # Temporary notification messages (success, error, info)
+    Toast.module.css                       # Styles for toast positioning and appearance
+
 
 ## Features
 
