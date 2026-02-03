@@ -573,12 +573,15 @@ const styles = {
   fieldRow: { display: "flex", flexDirection: "column", gap: 6 },
   label: { fontSize: 12, color: "#374151" },
   input: {
-    border: "1px solid #374151",
-    borderRadius: 12,
-    padding: "10px 12px",
-    fontSize: 14,
-    outline: "none",
-  },
+  border: "1px solid #d1d5db",
+  borderRadius: 12,
+  padding: "10px 12px",
+  fontSize: 14,
+  outline: "none",
+  color: "#111827",          // ✅ text color (dark)
+  backgroundColor: "white",  // ✅ ensure contrast
+},
+
   errorText: { marginTop: 8, color: "#b91c1c", fontSize: 12 },
   inlineSummary: {
     display: "flex",
